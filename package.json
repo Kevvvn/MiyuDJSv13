@@ -1,0 +1,22 @@
+{
+  "name": "miyu-v13",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "test": "bot.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "decode-entities": "^1.0.7",
+    "discord.js": "^13.0.1",
+    "fs-extra": "^10.0.0",
+    "is-image-url": "^1.1.8",
+    "js-levenshtein": "^1.1.6",
+    "lodash": "^4.17.21",
+    "nhentai-api": "^3.0.2",
+    "twitter": "^1.7.1"
+  }
+}
