@@ -1,4 +1,5 @@
-/.vscode
-/node_modules
-/package-lock.json
-/tokens.json
+.vscode
+node_modules
+package-lock.json
+tokens.json
+db.json

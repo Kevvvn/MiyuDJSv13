@@ -24,13 +24,13 @@ module.exports = {
 					}]
 				}
 				if (args) contents.content = args
-				await hook.send(contents).then(setTimeout(() => message.delete()))
-					.catch(err => {
-						if (err.message === 'Request entity too large') return message.channel.send(`${message.author}, image is too big!`);
-						else console.log(err);
-					})
+				d = await hook.send(contents).catch(err => {
+					if (err.message === 'Request entity too large') return message.channel.send(`${message.author}, image is too big!`);
+					else console.log(err);
+				})
+				message.client.datastore.set(d.id, message.author.id)
 				return await hook.edit({ name: 'Spoiler!' })
-					.then(hook => hook.delete())
+					.then(hook => hook.delete()).then(message.delete())
 			}
 			else {
 				const e = new MessageEmbed();

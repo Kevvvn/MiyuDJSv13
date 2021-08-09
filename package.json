@@ -17,6 +17,7 @@
     "js-levenshtein": "^1.1.6",
     "lodash": "^4.17.21",
     "nhentai-api": "^3.0.2",
+    "simple-json-db": "^1.2.3",
     "twitter": "^1.7.1"
   }
 }

@@ -46,8 +46,9 @@ async function process_book(message) {
     if (!books.length) return
     for (book of books){
         try{
-            await message.channel.send({embeds: [buildEmbed(book, nsfw)]})
+            d = await message.channel.send({embeds: [buildEmbed(book, nsfw)]})
             success = true
+            message.client.datastore.set(d.id, message.author.id)
         } catch {
             continue
         }

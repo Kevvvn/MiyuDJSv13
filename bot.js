@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const twitter = require('./helpers/twitter')
 const doujin = require('./helpers/doujin')
-const re = /.?https?:\/\/(?:www\.)?((e[-x]{1}hentai\.org)|(nhentai\.net)|(hitomi\.la)|(tsumino\.com))\S+/gi;
+const JSONdb = require('simple-json-db')
 
 const client = new Discord.Client({
     makeCache: Discord.Options.cacheWithLimits({
@@ -25,6 +25,8 @@ const client = new Discord.Client({
 })
 client.commands = new Discord.Collection();
 
+client.datastore = new JSONdb('./db.json')
+
 const commandFiles = fs.readdirSync('./cogs/').filter(f => f.endsWith('.js'));
 
 commandFiles.forEach(cmd => {
@@ -43,7 +45,6 @@ client.on('messageCreate', async message => {
     if (message.embeds.length) content = `[[${get_embed_title(message.embeds[0])}]] ${content}`
     console.log(`${message.author.username}: ${content}`)
     if (message.author.bot) return
-    const match = message.content.match(re);
     if (message.content.startsWith(PREFIX)) handleCommand(message)
 
     if (message.content.match(/(http(s)?:\/\/)?(www\.)?twitter\.com\/([a-zA-Z0-9_]+)?(\/web)?\/status\/([0-9]*)/i) && message.guild) {
@@ -53,7 +54,6 @@ client.on('messageCreate', async message => {
             message.react(emote);
         }
     }
-
     if (message.content.match(doujin.re)) doujin.process_book(message)
 })
 
@@ -65,8 +65,11 @@ client.on('messageReactionAdd', async (reaction, user) => {
     */
     if (reaction.partial) await reaction.message.fetch()
     if (user.client.user == user) return
-    if (['🗑️', '❌'].includes(reaction.emoji.name) && reaction.message.author.id == client.user.id) {
-        reaction.message.delete()
+    if (['🗑️', '❌'].includes(reaction.emoji.name) && (reaction.message.author.id == client.user.id || (reaction.message.author.bot && client.datastore.has(reaction.message.id)))) {
+        if (user.id == client.datastore.get(reaction.message.id)) {
+            reaction.message.delete()
+            client.datastore.delete(reaction.message.id)
+        }
     }
 })
 function get_embed_title(embed) {
