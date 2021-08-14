@@ -42,3 +42,4 @@ module.exports.emotes = {
 // 1️⃣2️⃣3️⃣4️⃣
 module.exports.getTweet = getTweet;
 module.exports.getCount = getCount;
+module.exports.re = regex

@@ -1,10 +1,10 @@
 const Discord = require('discord.js');
-const { PREFIX, TOKEN, OWNER } = require('./tokens.json');
+const { PREFIX, TOKEN, OWNER, GUILD } = require('./tokens.json');
 const fs = require('fs-extra');
-const _ = require('lodash');
 const twitter = require('./helpers/twitter')
 const doujin = require('./helpers/doujin')
 const JSONdb = require('simple-json-db')
+const context = require('./context');
 
 const client = new Discord.Client({
     makeCache: Discord.Options.cacheWithLimits({
@@ -17,6 +17,7 @@ const client = new Discord.Client({
         Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
         Discord.Intents.FLAGS.DIRECT_MESSAGES,
         Discord.Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
+        Discord.Intents.FLAGS.GUILD_MEMBERS,
     ],
     partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
     allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
@@ -33,38 +34,68 @@ commandFiles.forEach(cmd => {
     const command = require(`./cogs/${cmd}`);
     client.commands.set(command.name, command);
 });
-
+context.forEach(command => {
+    client.commands.set(command.name, command);
+})
 client.once('ready', async () => {
-    console.log(`Logged in as ${client.user.username}-chan`)
+    console.log(`Logged in as ${client.user.username}`)
     await client.application.fetch()
-    console.log(`Serving ${client.application.owner.username}`)
+    // GUILD is our home guild id
+    const home = await client.guilds.fetch(GUILD)
+    await setup_commands(client, home)
+    const command_loader = {
+        name: 'slash_loader',
+        type: 'CHAT_INPUT',
+        description: 'load commands in other guilds',
+        defaultPermission: false,
+        options: [{
+            name: 'choice_of_guild',
+            type: 'STRING',
+            description: 'Guild to update interactions',
+            required: true,
+            choices: client.guilds.cache.map(g => {
+                return { name: g.name, value: g.id }
+            })
+        }],
+        async execute(interaction) {
+            const guild = await client.guilds.fetch(interaction.options.data[0].value)
+            if (!guild) return interaction.reply({ content: 'guild not found', ephemeral: true })
+            await setup_commands(client, guild).then(ctx => interaction.reply({ content: `Loaded ${ctx.size} commands`, ephemeral: true }))
+        }
+    }
+    client.commands.set(command_loader.name, command_loader)
+    const loader = await home.commands.create(command_loader)
+    loader.permissions.set({
+        permissions: [{
+            id: OWNER,
+            type: 'USER',
+            permission: true,
+        },]
+    })
 })
 
 client.on('messageCreate', async message => {
-    let content = message.content
-    if (message.embeds.length) content = `[[${get_embed_title(message.embeds[0])}]] ${content}`
-    console.log(`${message.author.username}: ${content}`)
     if (message.author.bot) return
     if (message.content.startsWith(PREFIX)) handleCommand(message)
 
-    if (message.content.match(/(http(s)?:\/\/)?(www\.)?twitter\.com\/([a-zA-Z0-9_]+)?(\/web)?\/status\/([0-9]*)/i) && message.guild) {
+    // Display twitter image count
+    if (message.content.match(twitter.re) && message.guild) {
         const count = await twitter.getCount(message.content);
         if (count > 1 && count < 6 && (message.guild.me.permissions.has('ADD_REACTIONS'))) {
             const emote = twitter.emotes[count];
             message.react(emote);
         }
     }
+    // Process doujin
     if (message.content.match(doujin.re)) doujin.process_book(message)
 })
 
 client.on('messageReactionAdd', async (reaction, user) => {
-    /*
-        TODO
-        ADD MESSAGE-AUTHOR DB
-        SO THAT ONLY AUTHOR CAN DELETE MESSAGE
-    */
+    // Make sure the message is cached
     if (reaction.partial) await reaction.message.fetch()
+    // And it's a message made by us
     if (user.client.user == user) return
+    // Check if the user invoked this message before deleting
     if (['🗑️', '❌'].includes(reaction.emoji.name) && (reaction.message.author.id == client.user.id || (reaction.message.author.bot && client.datastore.has(reaction.message.id)))) {
         if (user.id == client.datastore.get(reaction.message.id)) {
             reaction.message.delete()
@@ -72,10 +103,29 @@ client.on('messageReactionAdd', async (reaction, user) => {
         }
     }
 })
-function get_embed_title(embed) {
-    if (embed.title) return embed.title
-    else return embed.url
-}
+
+client.on('interactionCreate', async (interaction) => {
+    if (['RoleMenu', 'RoleMenuSetup'].includes(interaction.customId) && interaction.guild) {
+        try {
+            const roleMenu = client.commands.get('role_menu')
+            if (interaction.customId === 'RoleMenu') return roleMenu.menu(interaction)
+            if (interaction.customId === 'RoleMenuSetup') return roleMenu.setup(interaction)
+        } catch (error) {
+            console.error(error);
+            return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
+    }
+    if (!interaction.isContextMenu() && !interaction.isCommand()) return
+    if (!client.commands.has(interaction.commandName)) return;
+
+    try {
+        await client.commands.get(interaction.commandName).execute(interaction);
+    } catch (error) {
+        console.error(error);
+        return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    }
+})
+
 async function handleCommand(message) {
     const command = message.content.trim().split(/\s+/g)[0].replace(PREFIX, '').toLocaleLowerCase();
     let args = message.content.trim().split(/\s+/g).slice(1);
@@ -93,8 +143,24 @@ async function handleCommand(message) {
         }
         else { cog.run(message, args); }
     }
-
 }
+async function setup_commands(client, guild) {
+    const owner = client.application.owner
+    if (!guild) return
+    console.log(`Loading commands for ${guild.name} ..`)
+    const ctxcmds = await guild.commands.set(context)
+    console.log(`Loaded ${ctxcmds.size} commands`)
+    await ctxcmds.find(c => c.name == 'load_permissions').permissions.set({
+        permissions: [{
+            id: owner.id,
+            type: 'USER',
+            permission: true,
+        },]
+    })
+    console.log(`Owner perms added for ${owner.username}`)
+    return ctxcmds
+}
+
 
 process.on('unhandledRejection', error => {
     console.error('unhandled api error', error)
