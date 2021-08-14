@@ -73,7 +73,8 @@ const roleMenu = {
             .setTitle('Role Colour')
             .setDescription('Receive a role colour by selecting one from this menu')
         // The setup menu becomes the role menu
-        await interaction.channel.send({ embeds: [MenuEmbed], components: [row] })
+        const d = await interaction.channel.send({ embeds: [MenuEmbed], components: [row] })
+        interaction.client.datastore.set(d.id, interaction.user.id)
         return interaction.update({ content: 'Role menu is now ready', components: [], ephemeral: true })
     },
     async menu(interaction) {
