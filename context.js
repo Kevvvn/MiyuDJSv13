@@ -73,7 +73,12 @@ const roleMenu = {
             .setTitle('Role Colour')
             .setDescription('Receive a role colour by selecting one from this menu')
         // The setup menu becomes the role menu
-        const d = await interaction.channel.send({ embeds: [MenuEmbed], components: [row] })
+        try {
+            const d = await interaction.channel.send({ embeds: [MenuEmbed], components: [row] })
+        } catch (error) {
+            if (error.message == 'Missing Access') return interaction.update({ content: `I lack the permissions to send messages to this channel.`, components: [], embeds: [], ephemeral: true })
+            else return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        }
         interaction.client.datastore.set(d.id, interaction.user.id)
         return interaction.update({ content: 'Role menu is now ready', components: [], ephemeral: true })
     },
@@ -103,7 +108,7 @@ const loadPerms = {
     }],
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true })
-        await interaction.guild.members.fetch({time: 60000 }).catch(console.error)
+        await interaction.guild.members.fetch({ time: 60000 }).catch(console.error)
         const perm = [{
             id: interaction.user.id,
             type: 'USER',
