@@ -33,13 +33,14 @@ const roleMenu = {
                 description: role.hexColor
             }
         })
+        if (!roleOptions.length) return interaction.reply({ content: `There are no roles I can add.\n Make sure every color role is below my highest role and that I have the \`MANAGE_ROLES\` permission.`, embeds: [], components: [], ephemeral: true })
         const row = new MessageActionRow()
             .addComponents(
                 new MessageSelectMenu()
                     .setCustomId('RoleMenuSetup')
                     .setPlaceholder('Select all roles to display')
                     .setMinValues(1)
-                    .setMaxValues(roles.count)
+                    .setMaxValues(roleOptions.length)
                     .addOptions(roleOptions)
             )
 
@@ -75,12 +76,12 @@ const roleMenu = {
         // The setup menu becomes the role menu
         try {
             const d = await interaction.channel.send({ embeds: [MenuEmbed], components: [row] })
+            interaction.client.datastore.set(d.id, interaction.user.id)
+            return interaction.update({ content: 'Role menu is now ready', components: [], ephemeral: true })
         } catch (error) {
             if (error.message == 'Missing Access') return interaction.update({ content: `I lack the permissions to send messages to this channel.`, components: [], embeds: [], ephemeral: true })
             else return interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
         }
-        interaction.client.datastore.set(d.id, interaction.user.id)
-        return interaction.update({ content: 'Role menu is now ready', components: [], ephemeral: true })
     },
     async menu(interaction) {
         const role = interaction.guild.roles.cache.get(interaction.values[0])
