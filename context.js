@@ -61,6 +61,11 @@ const roleMenu = {
                 description: role.hexColor
             }
         })
+        roles.push({
+            value: '0',
+            label: 'None',
+            description: 'Remove your role'
+        })
         const row = new MessageActionRow()
             .addComponents(
                 new MessageSelectMenu()
@@ -87,6 +92,7 @@ const roleMenu = {
         const role = interaction.guild.roles.cache.get(interaction.values[0])
         // Remove all the role options from the user before adding their choice
         await interaction.member.roles.remove(interaction.component.options.map(option => option.value))
+        if (!role) return await interaction.reply({ content: `You have removed your role colour`, ephemeral: true })
         await interaction.member.roles.add(role)
         return await interaction.reply({ content: `You have been assigned the \`${role.name.replace(/\b\w/g, l => l.toUpperCase())}\` role colour`, ephemeral: true })
     }
