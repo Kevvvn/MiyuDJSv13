@@ -17,7 +17,10 @@ function map_urls(urls) {
 
 async function process_book(message) {
     const nsfw = (!message.guild || message.channel.nsfw)
-    const matches = message.content.match(re_doujin)
+    const spoilerFilter = message.content.split('||')
+        .filter((e, idx) => idx % 2 == 0)
+        .join(' ')
+    const matches = spoilerFilter.match(re_doujin)
     const mapped = map_urls(matches)
     const extokens = []
     let books = []
@@ -44,9 +47,9 @@ async function process_book(message) {
         books = books.concat(exbooks)
     }
     if (!books.length) return
-    for (book of books){
-        try{
-            d = await message.channel.send({embeds: [buildEmbed(book, nsfw)]})
+    for (book of books) {
+        try {
+            d = await message.channel.send({ embeds: [buildEmbed(book, nsfw)] })
             success = true
             message.client.datastore.set(d.id, message.author.id)
         } catch {
@@ -67,17 +70,17 @@ function buildDescription(tags) {
 }
 
 function buildEmbed(book, nsfw = true) {
-	const embed = new MessageEmbed()
-	if (book.title) embed.setTitle(book.title)
-	if (book.tags) embed.setDescription(buildDescription(book.tags))
-	if (book.cover) embed.setImage(book.cover)
-	if (book.url) embed.setURL(book.url)
+    const embed = new MessageEmbed()
+    if (book.title) embed.setTitle(book.title)
+    if (book.tags) embed.setDescription(buildDescription(book.tags))
+    if (book.cover) embed.setImage(book.cover)
+    if (book.url) embed.setURL(book.url)
     if (book.color) embed.setColor(book.color)
     if (book.footer) embed.setFooter(book.footer)
     if (book.uploaded) embed.setTimestamp(book.uploaded)
     if (book.nhentai) embed.addField('nhentai mirror', book.nhentai)
     if (!nsfw) embed.setImage('https://cdn.discordapp.com/attachments/478415049094856715/666768753450811392/unknown.png')
-	return embed;
+    return embed;
 }
 
 exports.process_book = process_book

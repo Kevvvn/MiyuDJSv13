@@ -11,7 +11,7 @@ module.exports = {
 			return message.reply('Missing image attachment');
 		}
 		else if (message.attachments.size == 1) {
-			message.channel.sendTyping()
+			await message.channel.sendTyping()
 			image = message.attachments.first().url;
 			name = message.attachments.first().name;
 			if (message.guild.me.permissions.has('MANAGE_WEBHOOKS')) {

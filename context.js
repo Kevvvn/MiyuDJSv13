@@ -1,4 +1,4 @@
-const { MessageActionRow, MessageSelectMenu, MessageEmbed } = require('discord.js');
+const { MessageActionRow, MessageSelectMenu, MessageButton, MessageEmbed } = require('discord.js');
 const deleteMessage = {
     name: 'Delete my message',
     type: 'MESSAGE',
@@ -45,7 +45,7 @@ const roleMenu = {
             )
 
         const MenuEmbed = new MessageEmbed()
-            .setColor('FF0000')
+            .setColor('000000')
             .setTitle('Role Menu Setup')
             .setDescription('Select the roles to display in the role menu.')
 
@@ -75,7 +75,7 @@ const roleMenu = {
             )
 
         const MenuEmbed = new MessageEmbed()
-            .setColor('39FF14')
+            .setColor('50545B')
             .setTitle('Role Colour')
             .setDescription('Receive a role colour by selecting one from this menu')
         // The setup menu becomes the role menu
@@ -97,7 +97,26 @@ const roleMenu = {
         return await interaction.reply({ content: `You have been assigned the \`${role.name.replace(/\b\w/g, l => l.toUpperCase())}\` role colour`, ephemeral: true })
     }
 }
-const commands = [deleteMessage, favorite, roleMenu]
+const config = {
+    name: 'config',
+    type: 'CHAT_INPUT',
+    description: 'bot configuration',
+    defaultPermission: false,
+    async execute(interaction) {
+        const settings = JSON.parse(interaction.client.datastore.get(interaction.guild.id))
+        const row = new MessageActionRow()
+        for (const [key, value] of Object.entries(settings)) {
+            const button = new MessageButton()
+                .setCustomId(key)
+                .setLabel(key)
+            if (value) button.setStyle('SUCCESS')
+            else button.setStyle('DANGER')
+            row.addComponents(button)
+        }
+        await interaction.reply({ content: JSON.stringify(settings), components: [row], ephemeral: true })
+    }
+}
+const commands = [deleteMessage, favorite, roleMenu, config]
 
 const loadPerms = {
     name: 'load_permissions',

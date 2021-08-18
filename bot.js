@@ -72,22 +72,28 @@ client.once('ready', async () => {
             permission: true,
         },]
     })
+    client.guilds.cache.forEach(guild => {
+        if (!client.datastore.has(guild.id)) {
+            client.datastore.set(guild.id, JSON.stringify({
+                twitter_react: true,
+                twitter_rehost: false,
+                doujin: true,
+            }))
+        }
+    })
 })
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return
     if (message.content.startsWith(PREFIX)) handleCommand(message)
+    const settings = JSON.parse(client.datastore.get(message.guild.id))
 
     // Display twitter image count
     if (message.content.match(twitter.re) && message.guild) {
-        const count = await twitter.getCount(message.content);
-        if (count > 1 && count < 6 && (message.guild.me.permissions.has('ADD_REACTIONS'))) {
-            const emote = twitter.emotes[count];
-            message.react(emote);
-        }
+        await twitter.process_message(message)
     }
     // Process doujin
-    if (message.content.match(doujin.re)) doujin.process_book(message)
+    if (message.content.match(doujin.re) && settings.doujin) doujin.process_book(message)
 })
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -105,6 +111,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
 })
 
 client.on('interactionCreate', async (interaction) => {
+    if (['twitter_rehost', 'twitter_react', 'doujin'].includes(interaction.customId)) return config(interaction)
     if (['RoleMenu', 'RoleMenuSetup'].includes(interaction.customId) && interaction.guild) {
         try {
             const roleMenu = client.commands.get('role_menu')
@@ -160,7 +167,21 @@ async function setup_commands(client, guild) {
     console.log(`Owner perms added for ${owner.username}`)
     return ctxcmds
 }
-
+async function config(interaction) {
+    const settings = JSON.parse(interaction.client.datastore.get(interaction.guild.id))
+    settings[interaction.customId] = !settings[interaction.customId]
+    interaction.client.datastore.set(interaction.guild.id, JSON.stringify(settings))
+    const row = new Discord.MessageActionRow()
+    for (const [key, value] of Object.entries(settings)) {
+        const button = new Discord.MessageButton()
+            .setCustomId(key)
+            .setLabel(key)
+        if (value) button.setStyle('SUCCESS')
+        else button.setStyle('DANGER')
+        row.addComponents(button)
+    }
+    await interaction.update({ content: JSON.stringify(settings), components: [row], ephemeral: true })
+}
 
 process.on('unhandledRejection', error => {
     console.error('unhandled api error', error)
