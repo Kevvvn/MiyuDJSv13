@@ -83,8 +83,10 @@ async function rehost(message, tweet) {
 	await message.channel.sendTyping()
 	const media = await getMedia(tweet, message);
 	const e = new MessageEmbed()
-		.setAuthor(tweet.user.screen_name, tweet.user.profile_image_url)
-		.setDescription(tweet.full_text);
+		.setAuthor(`${tweet.user.name}(@${tweet.user.screen_name}`, tweet.user.profile_image_url)
+		.setDescription(tweet.full_text)
+		.setFooter("Twitter", "https://abs.twimg.com/icons/apple-touch-icon-192x192.png")
+		.setTimestamp(tweet.created_at)
 	return await message.channel.send({ embeds: [e], files: media }).then(msg => {
 		message.client.datastore.set(msg.id, message.author.id);
 		message.suppressEmbeds().catch(err => {
