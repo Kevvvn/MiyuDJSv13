@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const twitter = require('./helpers/twitter')
 const doujin = require('./helpers/doujin')
 const JSONdb = require('simple-json-db')
-const context = require('./context');
+const { context } = require('./context');
 
 const client = new Discord.Client({
     makeCache: Discord.Options.cacheWithLimits({
@@ -85,6 +85,9 @@ client.once('ready', async () => {
 
 client.on('messageCreate', async message => {
     if (message.author.bot) return
+    if (client.datastore.has(message.author.id)){
+        if (JSON.parse(client.datastore.get(message.author.id)).ignore) return
+    }
     if (message.content.startsWith(PREFIX)) handleCommand(message)
     const settings = JSON.parse(client.datastore.get(message.guild.id))
 
@@ -144,7 +147,6 @@ async function handleCommand(message) {
         if (cog.permission) {
             if (cog.permission.includes('OWNER') && message.author.id !== OWNER) return;
             if (message.author.id === OWNER || message.member.permissions.has(cog.permission, { checkAdmin: true, checkOwner: true })) {
-                console.log(message.member.permissions.has(cog.permission))
                 cog.run(message, args);
             }
         }

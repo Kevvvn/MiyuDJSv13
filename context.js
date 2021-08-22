@@ -21,7 +21,7 @@ const favorite = {
 const roleMenu = {
     name: 'role_menu',
     type: 'CHAT_INPUT',
-    description: 'Set-up a role menu',
+    description: 'Set-up a color role menu',
     defaultPermission: false,
     async execute(interaction) {
         const roles = await interaction.guild.roles.fetch()
@@ -154,4 +154,5 @@ const loadPerms = {
     }
 }
 commands.push(loadPerms)
-module.exports = commands
+module.exports.context = commands
+module.exports.globals = [deleteMessage, config]
