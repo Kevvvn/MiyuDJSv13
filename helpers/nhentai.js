@@ -57,7 +57,7 @@ async function getMirror(title) {
 }
 async function process_book(url){
     const id = url.match(/\b\d{1,6}\b/i)
-    if (id.length) return await nHentaiBook(id[0])
+    if (id) return await nHentaiBook(id[0])
 }
 exports.process_book = process_book
 exports.fetchBook = nHentaiBook;

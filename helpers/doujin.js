@@ -21,6 +21,7 @@ async function process_book(message) {
         .filter((e, idx) => idx % 2 == 0)
         .join(' ')
     const matches = spoilerFilter.match(re_doujin)
+    if (!matches) return
     const mapped = map_urls(matches)
     const extokens = []
     let books = []
@@ -44,7 +45,7 @@ async function process_book(message) {
     }
     if (extokens.length) {
         const exbooks = await exhentai.fetchBooks(extokens)
-        books = books.concat(exbooks)
+        if (exbooks) books = books.concat(exbooks)
     }
     if (!books.length) return
     for (book of books) {

@@ -5,6 +5,7 @@ const decodeEntities = require('decode-entities');
 
 async function process_url(url) {
     const id = url.match(/\bhttps?:\/\/e[-x]{1}hentai\.org\/([gs])\/(\S+)/i)
+    if (!id) return
     let bookKeys, gid, pid, page, token
     switch (id[1]) {
         case 'g':
