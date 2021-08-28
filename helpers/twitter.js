@@ -1,6 +1,6 @@
 const Twitter = require('twitter');
 const { api, secret, token } = require('../tokens.json').twitter;
-const { MessageEmbed } = require('discord.js')
+const { MessageEmbed, MessageAttachment } = require('discord.js')
 const fetch = require('node-fetch')
 
 const regex = /(http(s)?:\/\/)?(www\.)?twitter\.com\/([a-zA-Z0-9_]+)?(\/web)?\/status\/([0-9]*)/i;
@@ -33,11 +33,11 @@ async function getMedia(tweet, message) {
 	switch (tweet.extended_entities.media[0].type) {
 		case "photo":
 			media = tweet.extended_entities.media.map(m => m.media_url);
-			media = media.map((img, i) => ({ attachment: img + ':orig', name: `${tweet.id}_${i}.jpg` }));
+			media = media.map((img, i) => new MessageAttachment(img + ':orig', `${tweet.id}_${i}.jpg`));
 			break;
 		case "animated_gif":
 			media = tweet.extended_entities.media[0].video_info.variants[0].url
-			media = [{ attachment: media, name: `${tweet.id}.mp4` }]
+			media = [new MessageAttachment(media, `${tweet.id}.mp4`)]
 			break
 		case "video":
 			media = tweet.extended_entities.media[0].video_info.variants.map(m => m.url)
@@ -52,7 +52,7 @@ async function getMedia(tweet, message) {
 			vids.sort((a, b) => parseInt(b.size) - parseInt(a.size))
 			const tier = message.guild.premiumTier
 			while (['NONE', 'TIER_1'].includes(tier) && parseInt(vids[0].size) > 8000000) vids.shift()
-			media = [{ attachment: vids[0].url, name: `${tweet.id}.mp4` }]
+			media = [new MessageAttachment(vids[0].url, `${tweet.id}.mp4`)]
 			break;
 		default:
 			break;
@@ -88,12 +88,28 @@ async function rehost(message, tweet) {
 		.setFooter("Twitter", "https://abs.twimg.com/icons/apple-touch-icon-192x192.png")
 		.setTimestamp(tweet.created_at)
 		.setColor('1da0f2')
-	return await message.channel.send({ embeds: [e], files: media }).then(msg => {
-		message.client.datastore.set(msg.id, message.author.id);
-		message.suppressEmbeds().catch(err => {
-			if (err.code != 50013) client.error(err.message);
+	if (tweet.extended_entities.media[0].type == 'photo' && media.length == 1) {
+		e.setImage(`attachment://${media[0].name}`)
+		return await message.channel.send({ embeds: [e], files: media }).then(msg => {
+			message.client.datastore.set(msg.id, message.author.id);
+			message.suppressEmbeds().catch(err => {
+				if (err.code != 50013) client.error(err.message);
+			});
 		});
-	});
+	} else {
+		await message.channel.send({ embeds: [e] }).then(msg => {
+			message.client.datastore.set(msg.id, message.author.id);
+			message.suppressEmbeds().catch(err => {
+				if (err.code != 50013) return client.error(err.message);
+			}).then(message.channel.sendTyping())
+		})
+		return await message.channel.send({ files: media }).then(msg => {
+			message.client.datastore.set(msg.id, message.author.id);
+			message.suppressEmbeds().catch(err => {
+				if (err.code != 50013) return client.error(err.message);
+			})
+		})
+	}
 }
 const emotes = {
 	1: '1️⃣',
