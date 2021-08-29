@@ -53,6 +53,7 @@ async function process_book(message) {
             d = await message.channel.send({ embeds: [buildEmbed(book, nsfw)] })
             success = true
             message.client.datastore.set(d.id, message.author.id)
+            message.client.datastore.set(message.id, [d.id])
         } catch {
             continue
         }

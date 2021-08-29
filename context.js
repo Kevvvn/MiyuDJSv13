@@ -5,7 +5,7 @@ const deleteMessage = {
     async execute(interaction) {
         const message = interaction.options.getMessage('message')
         if (message.author.bot == true && interaction.client.datastore.has(message.id)) {
-            if (interaction.user.id == interaction.client.datastore.get(message.id)) return await message.delete().then(interaction.reply({ content: 'Message deleted.', ephemeral: true }))
+            if (interaction.user.id == interaction.client.datastore.get(message.id)) return await message.delete().then(interaction.reply({ content: 'Message deleted.', ephemeral: true })).then(interaction.client.datastore.delete(message.id))
         } else return interaction.reply({ content: 'Permission denied.', ephemeral: true })
 
     }

@@ -92,19 +92,24 @@ async function rehost(message, tweet) {
 		e.setImage(`attachment://${media[0].name}`)
 		return await message.channel.send({ embeds: [e], files: media }).then(msg => {
 			message.client.datastore.set(msg.id, message.author.id);
+			message.client.datastore.set(message.id, [msg.id]);
 			message.suppressEmbeds().catch(err => {
 				if (err.code != 50013) client.error(err.message);
 			});
 		});
 	} else {
+		const repl = []
 		await message.channel.send({ embeds: [e] }).then(msg => {
 			message.client.datastore.set(msg.id, message.author.id);
+			repl.push(msg.id)
 			message.suppressEmbeds().catch(err => {
 				if (err.code != 50013) return client.error(err.message);
 			}).then(message.channel.sendTyping())
 		})
 		return await message.channel.send({ files: media }).then(msg => {
 			message.client.datastore.set(msg.id, message.author.id);
+			repl.push(msg.id)
+			message.client.datastore.set(message.id, repl);
 			message.suppressEmbeds().catch(err => {
 				if (err.code != 50013) return client.error(err.message);
 			})
