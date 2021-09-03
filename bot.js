@@ -84,7 +84,7 @@ client.once('ready', async () => {
 })
 
 client.on('messageCreate', async message => {
-    if (message.author.bot) return
+    if (message.author.bot || !message.guild) return
     if (client.datastore.has(message.author.id)) {
         if (JSON.parse(client.datastore.get(message.author.id)).ignore) return
     }
@@ -119,7 +119,13 @@ client.on('messageDelete', async (message) => {
         const messages = client.datastore.get(message.id)
         if (typeof messages == 'string') return
         for (msg of messages) {
+            try {
             const bot_message = await message.channel.messages.fetch(msg)
+            } catch (e) {
+                if (e.message !== 'Unknown Message') console.error(e)
+                continue
+            }
+            if (!bot_message) continue
             if (bot_message.author.id === client.user.id) await bot_message.delete().then(() => {
                 client.datastore.delete(message.id)
                 client.datastore.delete(bot_message.id)

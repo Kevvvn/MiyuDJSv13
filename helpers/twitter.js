@@ -88,7 +88,8 @@ async function rehost(message, tweet) {
 		.setFooter("Twitter", "https://abs.twimg.com/icons/apple-touch-icon-192x192.png")
 		.setTimestamp(tweet.created_at)
 		.setColor('1da0f2')
-	if (tweet.extended_entities.media[0].type == 'photo' && media.length == 1) {
+	// disabled embed image for now
+	if (false && tweet.extended_entities.media[0].type == 'photo' && media.length == 1) {
 		e.setImage(`attachment://${media[0].name}`)
 		return await message.channel.send({ embeds: [e], files: media }).then(msg => {
 			message.client.datastore.set(msg.id, message.author.id);
