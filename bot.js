@@ -119,8 +119,9 @@ client.on('messageDelete', async (message) => {
         const messages = client.datastore.get(message.id)
         if (typeof messages == 'string') return
         for (msg of messages) {
+            let bot_message
             try {
-            const bot_message = await message.channel.messages.fetch(msg)
+            bot_message = await message.channel.messages.fetch(msg)
             } catch (e) {
                 if (e.message !== 'Unknown Message') console.error(e)
                 continue
